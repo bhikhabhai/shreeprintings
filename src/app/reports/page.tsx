@@ -111,7 +111,7 @@ export default function ReportsPage() {
                 <CardContent className="flex flex-wrap items-end gap-4 p-4">
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium text-slate-400">Month</label>
-                        <Select value={month} onValueChange={setMonth}>
+                        <Select value={month} onValueChange={(v: string | null) => setMonth(v || month)}>
                             <SelectTrigger className="w-40 border-white/10 bg-white/5 text-white">
                                 <SelectValue />
                             </SelectTrigger>
@@ -127,7 +127,7 @@ export default function ReportsPage() {
 
                     <div className="space-y-1.5">
                         <label className="text-sm font-medium text-slate-400">Year</label>
-                        <Select value={year} onValueChange={setYear}>
+                        <Select value={year} onValueChange={(v: string | null) => setYear(v || year)}>
                             <SelectTrigger className="w-28 border-white/10 bg-white/5 text-white">
                                 <SelectValue />
                             </SelectTrigger>

@@ -152,16 +152,15 @@ export default function EmployeesPage() {
                     </p>
                 </div>
 
+                <Button
+                    onClick={handleOpenAdd}
+                    className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-indigo-700"
+                >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Employee
+                </Button>
+
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button
-                            onClick={handleOpenAdd}
-                            className="bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-lg shadow-violet-500/25 hover:from-violet-700 hover:to-indigo-700"
-                        >
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Employee
-                        </Button>
-                    </DialogTrigger>
                     <DialogContent className="border-white/10 bg-slate-900 text-white sm:max-w-md">
                         <DialogHeader>
                             <DialogTitle className="text-white">
@@ -204,8 +203,8 @@ export default function EmployeesPage() {
                                 </Label>
                                 <Select
                                     value={formData.shift}
-                                    onValueChange={(val) =>
-                                        setFormData({ ...formData, shift: val })
+                                    onValueChange={(val: string | null) =>
+                                        setFormData({ ...formData, shift: val || "Day" })
                                     }
                                 >
                                     <SelectTrigger className="border-white/10 bg-white/5 text-white">
