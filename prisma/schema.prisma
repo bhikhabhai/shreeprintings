@@ -1,11 +1,30 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id         String   @id           // e.g., "E001"
+  name       String
+  shift      String                  // "Day" or "Night"
+  hourlyRate Float
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  attendance AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id               String   @id @default(cuid())
+  employeeId       String
+  date             DateTime
+  inTime           String?            // "09:00" format, nullable for absent
+  outTime          String?            // "18:00" format
+  manualExtraHours Float    @default(0)
+  employee         Employee @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
 }
