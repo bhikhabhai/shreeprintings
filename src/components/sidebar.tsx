@@ -8,6 +8,7 @@ import {
     CalendarCheck,
     FileBarChart,
     FileSpreadsheet,
+    LogOut,
 } from "lucide-react";
 
 const navItems = [
@@ -40,6 +41,11 @@ const navItems = [
 
 export default function Sidebar() {
     const pathname = usePathname();
+
+    const handleLogout = async () => {
+        await fetch("/api/auth", { method: "DELETE" });
+        window.location.href = "/login";
+    };
 
     return (
         <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r border-white/10 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 shadow-2xl">
@@ -95,7 +101,15 @@ export default function Sidebar() {
             </nav>
 
             {/* Footer */}
-            <div className="absolute bottom-8 left-0 right-0 px-6">
+            <div className="absolute bottom-8 left-0 right-0 px-6 space-y-4">
+                <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/20 bg-rose-500/10 py-2.5 text-sm font-medium text-rose-400 transition-colors hover:bg-rose-500/20 hover:text-rose-300"
+                >
+                    <LogOut className="h-4 w-4" />
+                    Sign Out
+                </button>
+
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm">
                     <p className="text-xs font-medium text-slate-400">Admin Panel</p>
                     <p className="mt-1 text-[11px] text-slate-500">
