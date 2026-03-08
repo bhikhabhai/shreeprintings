@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -16,15 +16,13 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
-    import("react").then(({ useEffect }) => {
-        useEffect(() => {
-            if (window.location.search.includes("expired=true")) {
-                setIsExpired(true);
-                // Clean the URL
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        }, []);
-    });
+    useEffect(() => {
+        if (typeof window !== "undefined" && window.location.search.includes("expired=true")) {
+            setIsExpired(true);
+            // Clean the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    }, []);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
