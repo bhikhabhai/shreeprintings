@@ -12,8 +12,19 @@ export default function LoginPage() {
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
+    const [isExpired, setIsExpired] = useState(false);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    import("react").then(({ useEffect }) => {
+        useEffect(() => {
+            if (window.location.search.includes("expired=true")) {
+                setIsExpired(true);
+                // Clean the URL
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+        }, []);
+    });
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -74,6 +85,12 @@ export default function LoginPage() {
                             Sign in to access the admin panel
                         </p>
                     </div>
+
+                    {isExpired && !error && (
+                        <div className="mb-6 rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-400">
+                            Your session has expired due to inactivity. Please log in again.
+                        </div>
+                    )}
 
                     <form onSubmit={handleLogin} className="space-y-5">
                         <div className="space-y-2">

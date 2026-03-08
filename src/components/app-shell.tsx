@@ -4,11 +4,15 @@ import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Sidebar from "@/components/sidebar";
 import { Menu } from "lucide-react";
+import { useIdleTimeout } from "@/hooks/use-idle-timeout";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const isLoginPage = pathname === "/login";
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    // Track user inactivity if not on login page
+    useIdleTimeout(isLoginPage);
 
     if (isLoginPage) {
         return <>{children}</>;
