@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                         </div>
                         <div>
                             <h1 className="text-lg font-bold tracking-tight text-white">
-                                Shree Printings
+                                Shree Multipack
                             </h1>
                             <p className="text-[11px] font-medium text-slate-400">
                                 Attendance Manager

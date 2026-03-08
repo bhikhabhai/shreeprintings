@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Shree Printings — Attendance Management",
+  title: "Shree Multipack — Attendance Management",
   description:
-    "Admin dashboard for managing employee attendance, shifts, and salary computation at Shree Printings.",
+    "Admin dashboard for managing employee attendance, shifts, and salary computation at Shree Multipack.",
 };
 
 export default function RootLayout({

@@ -55,8 +55,8 @@ export default function LoginPage() {
                     <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 shadow-2xl shadow-violet-500/30">
                         <span className="text-2xl font-bold text-white">S</span>
                     </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-white">
-                        Shree Printings
+                    <h1 className="text-2xl font-bold tracking-tight text-white">
+                        Shree Multipack
                     </h1>
                     <p className="mt-1 text-sm text-slate-400">
                         Attendance Management System
@@ -145,8 +145,8 @@ export default function LoginPage() {
                     </form>
                 </div>
 
-                <p className="mt-6 text-center text-xs text-slate-500">
-                    © {new Date().getFullYear()} Shree Printings. All rights reserved.
+                <p className="mt-6 text-center text-sm text-slate-500">
+                    © {new Date().getFullYear()} Shree Multipack. All rights reserved.
                 </p>
             </div>
         </div>

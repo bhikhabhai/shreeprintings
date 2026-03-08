@@ -25,7 +25,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 shadow-md">
                             <span className="text-sm font-bold text-white">S</span>
                         </div>
-                        <span className="font-bold tracking-tight text-white">Shree Printings</span>
+                        <span className="font-bold tracking-tight text-white">Shree Multipack</span>
                     </div>
                     <button
                         onClick={() => setSidebarOpen(true)}
