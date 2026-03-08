@@ -30,7 +30,7 @@ export async function PUT(
     try {
         const { id } = await params;
         const body = await request.json();
-        const { name, shift, hourlyRate, isActive } = body;
+        const { name, shift, hourlyRate, monthlySalary, isActive } = body;
 
         const employee = await prisma.employee.update({
             where: { id },
@@ -38,6 +38,9 @@ export async function PUT(
                 ...(name !== undefined && { name }),
                 ...(shift !== undefined && { shift }),
                 ...(hourlyRate !== undefined && { hourlyRate: parseFloat(hourlyRate) }),
+                ...(monthlySalary !== undefined && {
+                    monthlySalary: monthlySalary === null || monthlySalary === "" ? null : parseFloat(monthlySalary),
+                }),
                 ...(isActive !== undefined && { isActive }),
             },
         });

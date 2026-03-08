@@ -87,13 +87,18 @@ export async function GET(request: NextRequest) {
             totalWorkHours,
             totalExtraHours
         );
-        const totalPay = calculateTotalPay(totalPayableHours, emp.hourlyRate);
+
+        const effectiveHourlyRate = emp.monthlySalary
+            ? (emp.monthlySalary / totalDaysInMonth) / 12
+            : emp.hourlyRate;
+
+        const totalPay = calculateTotalPay(totalPayableHours, effectiveHourlyRate);
 
         return {
             employeeId: emp.id,
             employeeName: emp.name,
             shift: emp.shift,
-            hourlyRate: emp.hourlyRate,
+            hourlyRate: Math.round(effectiveHourlyRate * 100) / 100,
             totalDays: totalDaysInMonth,
             presentDays,
             halfDays,

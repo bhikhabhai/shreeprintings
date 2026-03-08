@@ -10,8 +10,9 @@ datasource db {
 model Employee {
   id         String   @id           // e.g., "E001"
   name       String
-  shift      String                  // "Day" or "Night"
-  hourlyRate Float
+  shift         String                  // "Day" or "Night"
+  hourlyRate    Float                   // Fallback or static rate
+  monthlySalary Float?                  // Dynamic base salary
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   attendance AttendanceRecord[]

@@ -34,6 +34,7 @@ interface Employee {
     name: string;
     shift: string;
     hourlyRate: number;
+    monthlySalary?: number | null;
     isActive: boolean;
     createdAt: string;
 }
@@ -79,7 +80,7 @@ export default function EmployeesPage() {
             id: emp.id,
             name: emp.name,
             shift: emp.shift,
-            monthlySalary: "", // We don't store monthly salary in DB currently, just hourly
+            monthlySalary: emp.monthlySalary ? emp.monthlySalary.toString() : "",
             hourlyRate: emp.hourlyRate.toString(),
         });
         setDialogOpen(true);
@@ -96,6 +97,7 @@ export default function EmployeesPage() {
                         name: formData.name,
                         shift: formData.shift,
                         hourlyRate: formData.hourlyRate,
+                        monthlySalary: formData.monthlySalary || null,
                     }),
                 });
             } else {

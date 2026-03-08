@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { id, name, shift, hourlyRate } = body;
+        const { id, name, shift, hourlyRate, monthlySalary } = body;
 
         if (!id || !name || !shift || hourlyRate === undefined) {
             return NextResponse.json(
@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
                 name,
                 shift,
                 hourlyRate: parseFloat(hourlyRate),
+                monthlySalary: monthlySalary ? parseFloat(monthlySalary) : null,
             },
         });
 
