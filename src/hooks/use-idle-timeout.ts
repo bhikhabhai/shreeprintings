@@ -52,5 +52,5 @@ export function useIdleTimeout(isDisabled: boolean = false) {
                 document.removeEventListener(event, resetTimer);
             });
         };
-    }, []);
+    }, [isDisabled]);
 }

@@ -12,7 +12,7 @@ export function calculateWorkHours(
     const [inH, inM] = inTime.split(":").map(Number);
     const [outH, outM] = outTime.split(":").map(Number);
 
-    let inMinutes = inH * 60 + inM;
+    const inMinutes = inH * 60 + inM;
     let outMinutes = outH * 60 + outM;
 
     // Handle overnight shifts (e.g., in at 22:00, out at 06:00)

@@ -53,35 +53,35 @@ export default function AttendancePage() {
     const [saving, setSaving] = useState(false);
     const [savedMessage, setSavedMessage] = useState("");
 
-    const fetchData = useCallback(async (date: string) => {
-        setLoading(true);
-        const [empsRes, attendanceRes] = await Promise.all([
-            fetch("/api/employees?active=true").then((r) => r.json()),
-            fetch(`/api/attendance?date=${date}`).then((r) => r.json()),
-        ]);
-
-        setEmployees(empsRes);
-
-        // Build entries from existing records or empty
-        const newEntries: Record<string, AttendanceEntry> = {};
-        empsRes.forEach((emp: Employee) => {
-            const record = attendanceRes.find(
-                (r: AttendanceRecord) => r.employeeId === emp.id
-            );
-            newEntries[emp.id] = {
-                employeeId: emp.id,
-                inTime: record?.inTime || "",
-                outTime: record?.outTime || "",
-            };
-        });
-
-        setEntries(newEntries);
-        setLoading(false);
-    }, []);
-
     useEffect(() => {
-        fetchData(selectedDate);
-    }, [selectedDate, fetchData]);
+        const fetchData = async () => {
+            setLoading(true);
+            const [empsRes, attendanceRes] = await Promise.all([
+                fetch("/api/employees?active=true").then((res) => res.json()),
+                fetch(`/api/attendance?date=${selectedDate}`).then((res) => res.json()),
+            ]);
+
+            setEmployees(empsRes);
+
+            // Build entries from existing records or empty
+            const newEntries: Record<string, AttendanceEntry> = {};
+            empsRes.forEach((emp: Employee) => {
+                const record = attendanceRes.find(
+                    (r: AttendanceRecord) => r.employeeId === emp.id
+                );
+                newEntries[emp.id] = {
+                    employeeId: emp.id,
+                    inTime: record?.inTime || "",
+                    outTime: record?.outTime || "",
+                };
+            });
+
+            setEntries(newEntries);
+            setLoading(false);
+        };
+
+        fetchData();
+    }, [selectedDate]);
 
     const updateEntry = (
         empId: string,

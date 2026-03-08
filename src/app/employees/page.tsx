@@ -47,6 +47,7 @@ export default function EmployeesPage() {
         id: "",
         name: "",
         shift: "Day",
+        monthlySalary: "",
         hourlyRate: "",
     });
     const [saving, setSaving] = useState(false);
@@ -63,7 +64,7 @@ export default function EmployeesPage() {
     }, [fetchEmployees]);
 
     const resetForm = () => {
-        setFormData({ id: "", name: "", shift: "Day", hourlyRate: "" });
+        setFormData({ id: "", name: "", shift: "Day", monthlySalary: "", hourlyRate: "" });
         setEditing(null);
     };
 
@@ -78,6 +79,7 @@ export default function EmployeesPage() {
             id: emp.id,
             name: emp.name,
             shift: emp.shift,
+            monthlySalary: "", // We don't store monthly salary in DB currently, just hourly
             hourlyRate: emp.hourlyRate.toString(),
         });
         setDialogOpen(true);
@@ -216,20 +218,53 @@ export default function EmployeesPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="emp-rate" className="text-slate-300">
-                                    Hourly Rate (₹)
-                                </Label>
-                                <Input
-                                    id="emp-rate"
-                                    type="number"
-                                    placeholder="150"
-                                    value={formData.hourlyRate}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, hourlyRate: e.target.value })
-                                    }
-                                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="emp-salary" className="text-slate-300">
+                                        Monthly Salary (₹)
+                                    </Label>
+                                    <Input
+                                        id="emp-salary"
+                                        type="number"
+                                        placeholder="15000"
+                                        value={formData.monthlySalary}
+                                        onChange={(e) => {
+                                            const salary = parseFloat(e.target.value);
+                                            // Calculate days in current month
+                                            const now = new Date();
+                                            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+                                            let hourly = "";
+                                            if (!isNaN(salary) && salary > 0) {
+                                                // Formula: (Monthly Salary / Days in Month) / 12 hours
+                                                hourly = (salary / daysInMonth / 12).toFixed(2);
+                                            }
+
+                                            setFormData({
+                                                ...formData,
+                                                monthlySalary: e.target.value,
+                                                hourlyRate: hourly
+                                            });
+                                        }}
+                                        className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                                    />
+                                    <p className="text-[10px] text-slate-500">Auto-calculates hourly rate</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="emp-rate" className="text-slate-300">
+                                        Hourly Rate (₹)
+                                    </Label>
+                                    <Input
+                                        id="emp-rate"
+                                        type="number"
+                                        placeholder="41.67"
+                                        value={formData.hourlyRate}
+                                        onChange={(e) =>
+                                            setFormData({ ...formData, hourlyRate: e.target.value })
+                                        }
+                                        className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                                    />
+                                </div>
                             </div>
                             <div className="flex gap-3 pt-2">
                                 <Button
