@@ -132,11 +132,11 @@ export default function ImportPage() {
                             className="hidden"
                         />
 
-                        <div className="mt-6 flex gap-3">
+                        <div className="mt-6 flex flex-col sm:flex-row w-full sm:w-auto gap-3">
                             <Button
                                 variant="outline"
                                 onClick={() => fileInputRef.current?.click()}
-                                className="border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
+                                className="w-full sm:w-auto border-white/10 text-slate-300 hover:bg-white/10 hover:text-white"
                             >
                                 <FileSpreadsheet className="mr-2 h-4 w-4" />
                                 Browse Files
@@ -145,7 +145,7 @@ export default function ImportPage() {
                             <Button
                                 onClick={handleImport}
                                 disabled={!file || importing}
-                                className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50"
+                                className="w-full sm:w-auto bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-500/25 hover:from-emerald-700 hover:to-teal-700 disabled:opacity-50"
                             >
                                 <Upload className="mr-2 h-4 w-4" />
                                 {importing ? "Importing..." : "Import Data"}

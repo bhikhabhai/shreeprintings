@@ -97,7 +97,7 @@ export default function ReportsPage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <h1 className="text-3xl font-bold tracking-tight text-white">
                     Monthly Reports
                 </h1>

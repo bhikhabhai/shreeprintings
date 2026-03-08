@@ -154,7 +154,7 @@ export default function AttendancePage() {
     return (
         <div className="space-y-8">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-white">
                         Daily Attendance
@@ -198,7 +198,7 @@ export default function AttendancePage() {
                         <ChevronRight className="h-5 w-5" />
                     </Button>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         {savedMessage && (
                             <span
                                 className={`text-sm font-medium ${savedMessage.startsWith("✓")
