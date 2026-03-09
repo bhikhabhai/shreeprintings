@@ -12,6 +12,7 @@ import {
     X,
     ShieldCheck,
     Clock,
+    KeyRound,
 } from "lucide-react";
 import { useSession } from "@/components/session-provider";
 
@@ -49,6 +50,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         if (role === "SUPER_ADMIN") {
             navItems.push({ label: "Users", href: "/users", icon: ShieldCheck });
+            navItems.push({ label: "Manage Passwords", href: "/manage-passwords", icon: KeyRound });
         }
     }
 

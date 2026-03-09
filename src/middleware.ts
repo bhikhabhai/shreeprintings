@@ -46,9 +46,9 @@ export function middleware(request: NextRequest) {
         }
     }
 
-    // VIEW_ADMIN — block Users management page and all user API mutations
+    // VIEW_ADMIN — block Users management and password management pages
     if (role === "VIEW_ADMIN") {
-        if (pathname.startsWith("/users") || pathname.startsWith("/api/users")) {
+        if (pathname.startsWith("/users") || pathname.startsWith("/api/users") || pathname.startsWith("/manage-passwords")) {
             return NextResponse.redirect(new URL("/", request.url));
         }
     }
