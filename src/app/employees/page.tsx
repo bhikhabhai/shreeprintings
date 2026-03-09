@@ -122,6 +122,12 @@ export default function EmployeesPage() {
         await fetchEmployees();
     };
 
+    const handlePermanentDelete = async (id: string, name: string) => {
+        if (!confirm(`Permanently delete "${name}" and ALL their attendance records? This cannot be undone.`)) return;
+        await fetch(`/api/employees/${id}?permanent=true`, { method: "DELETE" });
+        await fetchEmployees();
+    };
+
     const handleReactivate = async (id: string) => {
         await fetch(`/api/employees/${id}`, {
             method: "PUT",
@@ -429,14 +435,25 @@ export default function EmployeesPage() {
                                                 {emp.shift}
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleReactivate(emp.id)}
-                                                    className="text-sm text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
-                                                >
-                                                    Reactivate
-                                                </Button>
+                                                <div className="flex justify-end items-center gap-2">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handleReactivate(emp.id)}
+                                                        className="text-sm text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
+                                                    >
+                                                        Reactivate
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        onClick={() => handlePermanentDelete(emp.id, emp.name)}
+                                                        className="h-8 w-8 p-0 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
+                                                        title="Delete permanently"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}

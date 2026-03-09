@@ -55,13 +55,23 @@ export async function PUT(
     }
 }
 
-// DELETE /api/employees/[id] — soft-delete employee
+// DELETE /api/employees/[id] — soft-delete OR permanently delete employee
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         const { id } = await params;
+        const permanent = request.nextUrl.searchParams.get("permanent") === "true";
+
+        if (permanent) {
+            // Hard delete: remove attendance records first, then employee
+            await prisma.attendanceRecord.deleteMany({ where: { employeeId: id } });
+            await prisma.employee.delete({ where: { id } });
+            return NextResponse.json({ success: true, deleted: id });
+        }
+
+        // Soft delete: mark as inactive
         const employee = await prisma.employee.update({
             where: { id },
             data: { isActive: false },
