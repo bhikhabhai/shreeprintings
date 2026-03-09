@@ -58,6 +58,7 @@ export default function UsersPage() {
     const [formData, setFormData] = useState({
         username: "",
         password: "",
+        email: "",
         role: "VIEW_ADMIN" as "SUPER_ADMIN" | "VIEW_ADMIN" | "EMPLOYEE",
         employeeId: "",
     });
@@ -85,13 +86,13 @@ export default function UsersPage() {
     }, [session, fetchData]);
 
     const resetForm = () => {
-        setFormData({ username: "", password: "", role: "VIEW_ADMIN", employeeId: "" });
+        setFormData({ username: "", password: "", email: "", role: "VIEW_ADMIN", employeeId: "" });
         setEditing(null);
     };
 
     const handleEdit = (user: AppUser) => {
         setEditing(user);
-        setFormData({ username: user.username, password: "", role: user.role, employeeId: user.employeeId || "" });
+        setFormData({ username: user.username, password: "", email: (user as AppUser & { email?: string }).email || "", role: user.role, employeeId: user.employeeId || "" });
         setDialogOpen(true);
     };
 
@@ -100,6 +101,7 @@ export default function UsersPage() {
         const body = {
             username: formData.username,
             password: formData.password || undefined,
+            email: formData.email || null,
             role: formData.role,
             employeeId: formData.role === "EMPLOYEE" ? formData.employeeId || null : null,
         };
@@ -174,6 +176,16 @@ export default function UsersPage() {
                                 value={formData.username}
                                 onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                                 disabled={!!editing}
+                                className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-slate-300">Email <span className="text-slate-500">(for password reset)</span></Label>
+                            <Input
+                                type="email"
+                                placeholder="user@example.com"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                 className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
                             />
                         </div>

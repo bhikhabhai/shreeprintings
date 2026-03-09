@@ -21,11 +21,12 @@ export async function PUT(
     }
 
     const { id } = await params;
-    const { username, password, role, employeeId } = await request.json();
+    const { username, password, role, employeeId, email } = await request.json();
 
     const updateData: Record<string, unknown> = {};
     if (username) updateData.username = username;
     if (role) updateData.role = role;
+    if (email !== undefined) updateData.email = email || null;
     if (employeeId !== undefined) updateData.employeeId = employeeId || null;
     if (password) updateData.passwordHash = await bcrypt.hash(password, 12);
 

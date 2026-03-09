@@ -7,7 +7,11 @@ export function middleware(request: NextRequest) {
     // Allow login page and auth API
     if (
         pathname === "/login" ||
-        pathname.startsWith("/api/auth")
+        pathname === "/forgot-password" ||
+        pathname === "/reset-password" ||
+        pathname.startsWith("/api/auth") ||
+        pathname.startsWith("/api/forgot-password") ||
+        pathname.startsWith("/api/reset-password")
     ) {
         return NextResponse.next();
     }

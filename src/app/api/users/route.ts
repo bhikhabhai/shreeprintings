@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
             id: true,
             username: true,
             role: true,
+            email: true,
             employeeId: true,
             createdAt: true,
             employee: { select: { name: true } },
@@ -39,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        const { username, password, role, employeeId } = await request.json();
+        const { username, password, role, employeeId, email } = await request.json();
 
         if (!username || !password || !role) {
             return NextResponse.json({ error: "username, password, role required" }, { status: 400 });
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
                 username,
                 passwordHash,
                 role,
+                email: email || null,
                 employeeId: employeeId || null,
             },
         });

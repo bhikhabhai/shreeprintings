@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Lock, Eye, EyeOff, LogIn } from "lucide-react";
+import Link from "next/link";
 
 export default function LoginPage() {
     const [username, setUsername] = useState("");
@@ -158,6 +159,14 @@ export default function LoginPage() {
                             )}
                         </Button>
                     </form>
+                    <div className="mt-5 text-center">
+                        <Link
+                            href="/forgot-password"
+                            className="text-sm text-slate-500 hover:text-violet-400 transition-colors"
+                        >
+                            Forgot your password?
+                        </Link>
+                    </div>
                 </div>
 
                 <p className="mt-6 text-center text-sm text-slate-500">
