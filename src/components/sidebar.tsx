@@ -10,35 +10,10 @@ import {
     FileSpreadsheet,
     LogOut,
     X,
+    ShieldCheck,
+    Clock,
 } from "lucide-react";
-
-const navItems = [
-    {
-        label: "Dashboard",
-        href: "/",
-        icon: LayoutDashboard,
-    },
-    {
-        label: "Employees",
-        href: "/employees",
-        icon: Users,
-    },
-    {
-        label: "Attendance",
-        href: "/attendance",
-        icon: CalendarCheck,
-    },
-    {
-        label: "Reports",
-        href: "/reports",
-        icon: FileBarChart,
-    },
-    {
-        label: "Import Data",
-        href: "/import",
-        icon: FileSpreadsheet,
-    },
-];
+import { useSession } from "@/components/session-provider";
 
 interface SidebarProps {
     isOpen: boolean;
@@ -47,11 +22,35 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     const pathname = usePathname();
+    const session = useSession();
+    const role = session?.role;
 
     const handleLogout = async () => {
         await fetch("/api/auth", { method: "DELETE" });
         window.location.href = "/login";
     };
+
+    // Build nav items based on role
+    const navItems = [];
+
+    if (role === "EMPLOYEE") {
+        navItems.push({
+            label: "My Attendance",
+            href: "/my-attendance",
+            icon: Clock,
+        });
+    } else {
+        // SUPER_ADMIN and VIEW_ADMIN
+        navItems.push({ label: "Dashboard", href: "/", icon: LayoutDashboard });
+        navItems.push({ label: "Employees", href: "/employees", icon: Users });
+        navItems.push({ label: "Attendance", href: "/attendance", icon: CalendarCheck });
+        navItems.push({ label: "Reports", href: "/reports", icon: FileBarChart });
+        navItems.push({ label: "Import Data", href: "/import", icon: FileSpreadsheet });
+
+        if (role === "SUPER_ADMIN") {
+            navItems.push({ label: "Users", href: "/users", icon: ShieldCheck });
+        }
+    }
 
     return (
         <>
@@ -104,7 +103,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                                     <Link
                                         href={item.href}
                                         onClick={() => {
-                                            // Close sidebar on mobile when navigating
                                             if (window.innerWidth < 1024) onClose();
                                         }}
                                         className={`group flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all duration-200 ${isActive
@@ -140,9 +138,11 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                     </button>
 
                     <div className="rounded-xl border border-white/5 bg-white/5 p-4 backdrop-blur-sm">
-                        <p className="text-xs font-medium text-slate-400">Admin Panel</p>
+                        <p className="text-xs font-medium text-slate-400 truncate">
+                            {session?.username || "…"}
+                        </p>
                         <p className="mt-1 text-[11px] text-slate-500">
-                            v1.0 — Attendance Mgmt
+                            {role === "SUPER_ADMIN" ? "Super Admin" : role === "VIEW_ADMIN" ? "View Admin" : "Employee"}
                         </p>
                     </div>
                 </div>

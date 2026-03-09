@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { decodeSession } from "@/lib/session";
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl;
@@ -23,22 +24,43 @@ export function middleware(request: NextRequest) {
     }
 
     // Check for auth token
-    const token = request.cookies.get("auth_token");
+    const tokenCookie = request.cookies.get("auth_token");
 
-    if (!token) {
-        // Redirect to login
-        const loginUrl = new URL("/login", request.url);
-        return NextResponse.redirect(loginUrl);
+    if (!tokenCookie) {
+        return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    // Refresh session expiration (rolling session)
+    const session = decodeSession(tokenCookie.value);
+    if (!session) {
+        return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    const { role } = session;
+
+    // EMPLOYEE — restrict to only /my-attendance and its API
+    if (role === "EMPLOYEE") {
+        const employeeAllowed = ["/my-attendance", "/api/my-attendance"];
+        const allowed = employeeAllowed.some((p) => pathname.startsWith(p));
+        if (!allowed) {
+            return NextResponse.redirect(new URL("/my-attendance", request.url));
+        }
+    }
+
+    // VIEW_ADMIN — block Users management page and all user API mutations
+    if (role === "VIEW_ADMIN") {
+        if (pathname.startsWith("/users") || pathname.startsWith("/api/users")) {
+            return NextResponse.redirect(new URL("/", request.url));
+        }
+    }
+
+    // Refresh rolling session (30 min)
     const response = NextResponse.next();
-    response.cookies.set("auth_token", token.value, {
+    response.cookies.set("auth_token", tokenCookie.value, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 30 * 60, // 30 minutes
+        maxAge: 30 * 60,
     });
 
     return response;

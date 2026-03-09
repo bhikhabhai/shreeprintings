@@ -7,23 +7,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  SUPER_ADMIN
+  VIEW_ADMIN
+  EMPLOYEE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  role         Role     @default(VIEW_ADMIN)
+  employeeId   String?  @unique
+  employee     Employee? @relation(fields: [employeeId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
 model Employee {
-  id         String   @id           // e.g., "E001"
-  name       String
-  shift         String                  // "Day" or "Night"
-  hourlyRate    Float                   // Fallback or static rate
-  monthlySalary Float?                  // Dynamic base salary
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  attendance AttendanceRecord[]
+  id            String   @id
+  name          String
+  shift         String
+  hourlyRate    Float
+  monthlySalary Float?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  attendance    AttendanceRecord[]
+  user          User?
 }
 
 model AttendanceRecord {
   id               String   @id @default(cuid())
   employeeId       String
   date             DateTime
-  inTime           String?            // "09:00" format, nullable for absent
-  outTime          String?            // "18:00" format
+  inTime           String?
+  outTime          String?
   manualExtraHours Float    @default(0)
   employee         Employee @relation(fields: [employeeId], references: [id])
 
