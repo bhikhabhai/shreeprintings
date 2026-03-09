@@ -27,7 +27,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Plus, Pencil, Trash2, UserPlus, KeyRound } from "lucide-react";
+import { useSession } from "@/components/session-provider";
 
 interface Employee {
     id: string;
@@ -37,9 +38,11 @@ interface Employee {
     monthlySalary?: number | null;
     isActive: boolean;
     createdAt: string;
+    user?: { id: string; username: string; email?: string | null } | null;
 }
 
 export default function EmployeesPage() {
+    const session = useSession();
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -53,10 +56,27 @@ export default function EmployeesPage() {
     });
     const [saving, setSaving] = useState(false);
 
+    // Login dialog state
+    const [loginDialogOpen, setLoginDialogOpen] = useState(false);
+    const [loginTarget, setLoginTarget] = useState<Employee | null>(null);
+    const [loginForm, setLoginForm] = useState({ username: "", email: "", password: "" });
+    const [loginSaving, setLoginSaving] = useState(false);
+    const [loginMsg, setLoginMsg] = useState("");
+
     const fetchEmployees = useCallback(async () => {
         const res = await fetch("/api/employees");
         const data = await res.json();
-        setEmployees(data);
+        // Also fetch users to know which employees have logins
+        let users: Array<{ id: string; username: string; email?: string | null; employeeId?: string | null }> = [];
+        try {
+            const uRes = await fetch("/api/users");
+            if (uRes.ok) users = await uRes.json();
+        } catch { /* non-admin users can't fetch users */ }
+        const withUser = data.map((emp: Employee) => ({
+            ...emp,
+            user: users.find((u) => u.employeeId === emp.id) || null,
+        }));
+        setEmployees(withUser);
         setLoading(false);
     }, []);
 
@@ -128,6 +148,55 @@ export default function EmployeesPage() {
         await fetchEmployees();
     };
 
+    const handleOpenLogin = (emp: Employee) => {
+        setLoginTarget(emp);
+        setLoginForm({
+            username: emp.user?.username || emp.id.toLowerCase(),
+            email: emp.user?.email || "",
+            password: "",
+        });
+        setLoginMsg("");
+        setLoginDialogOpen(true);
+    };
+
+    const handleSaveLogin = async () => {
+        if (!loginTarget) return;
+        if (!loginForm.username) { setLoginMsg("Username is required"); return; }
+        if (!loginTarget.user && !loginForm.password) { setLoginMsg("Password is required for new login"); return; }
+        setLoginSaving(true);
+        setLoginMsg("");
+
+        if (loginTarget.user) {
+            // Update existing user
+            const res = await fetch(`/api/users/${loginTarget.user.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email: loginForm.email || null,
+                    password: loginForm.password || undefined,
+                }),
+            });
+            setLoginMsg(res.ok ? "✓ Login updated!" : "Failed to update");
+        } else {
+            // Create new EMPLOYEE user linked to this employee
+            const res = await fetch("/api/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    username: loginForm.username,
+                    email: loginForm.email || null,
+                    password: loginForm.password,
+                    role: "EMPLOYEE",
+                    employeeId: loginTarget.id,
+                }),
+            });
+            setLoginMsg(res.ok ? "✓ Login created!" : "Failed to create (username may already exist)");
+        }
+
+        setLoginSaving(false);
+        await fetchEmployees();
+    };
+
     const handleReactivate = async (id: string) => {
         await fetch(`/api/employees/${id}`, {
             method: "PUT",
@@ -169,136 +238,213 @@ export default function EmployeesPage() {
                     <Plus className="mr-2 h-4 w-4" />
                     Add Employee
                 </Button>
+            </div>
 
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                    <DialogContent className="border-white/10 bg-slate-900 text-white sm:max-w-md">
+            {/* Set Login Dialog */}
+            {session?.role === "SUPER_ADMIN" && (
+                <Dialog open={loginDialogOpen} onOpenChange={setLoginDialogOpen}>
+                    <DialogContent className="border-white/10 bg-slate-900 text-white sm:max-w-sm">
                         <DialogHeader>
-                            <DialogTitle className="text-white">
-                                {editing ? "Edit Employee" : "Add New Employee"}
+                            <DialogTitle className="text-white flex items-center gap-2">
+                                <KeyRound className="h-4 w-4 text-violet-400" />
+                                {loginTarget?.user ? "Update Login" : "Create Login"} — {loginTarget?.name}
                             </DialogTitle>
                         </DialogHeader>
-                        <div className="space-y-4 pt-4">
+                        <div className="space-y-4 pt-2">
+                            {loginTarget?.user && (
+                                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-400">
+                                    ✓ Already has login: <strong>{loginTarget.user.username}</strong>
+                                </div>
+                            )}
+                            {!loginTarget?.user && (
+                                <div className="space-y-2">
+                                    <Label className="text-slate-300">Username</Label>
+                                    <Input
+                                        placeholder="employee123"
+                                        value={loginForm.username}
+                                        onChange={(e) => setLoginForm({ ...loginForm, username: e.target.value })}
+                                        className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                                    />
+                                </div>
+                            )}
                             <div className="space-y-2">
-                                <Label htmlFor="emp-id" className="text-slate-300">
-                                    Employee ID
-                                </Label>
+                                <Label className="text-slate-300">Email <span className="text-slate-500">(for password reset)</span></Label>
                                 <Input
-                                    id="emp-id"
-                                    placeholder="E001"
-                                    value={formData.id}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, id: e.target.value })
-                                    }
-                                    disabled={!!editing}
+                                    type="email"
+                                    placeholder="employee@example.com"
+                                    value={loginForm.email}
+                                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                                     className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="emp-name" className="text-slate-300">
-                                    Full Name
+                                <Label className="text-slate-300">
+                                    Password {loginTarget?.user && <span className="text-slate-500">(leave blank to keep current)</span>}
                                 </Label>
                                 <Input
-                                    id="emp-name"
-                                    placeholder="John Smith"
-                                    value={formData.name}
-                                    onChange={(e) =>
-                                        setFormData({ ...formData, name: e.target.value })
-                                    }
+                                    type="password"
+                                    placeholder="••••••••"
+                                    value={loginForm.password}
+                                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                                     className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="emp-shift" className="text-slate-300">
-                                    Shift
-                                </Label>
-                                <Select
-                                    value={formData.shift}
-                                    onValueChange={(val: string | null) =>
-                                        setFormData({ ...formData, shift: val || "Day" })
-                                    }
-                                >
-                                    <SelectTrigger className="border-white/10 bg-white/5 text-white">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-white/10 bg-slate-800">
-                                        <SelectItem value="Day">Day</SelectItem>
-                                        <SelectItem value="Night">Night</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="emp-salary" className="text-slate-300">
-                                        Monthly Salary (₹)
-                                    </Label>
-                                    <Input
-                                        id="emp-salary"
-                                        type="number"
-                                        placeholder="15000"
-                                        value={formData.monthlySalary}
-                                        onChange={(e) => {
-                                            const salary = parseFloat(e.target.value);
-                                            // Calculate days in current month
-                                            const now = new Date();
-                                            const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-
-                                            let hourly = "";
-                                            if (!isNaN(salary) && salary > 0) {
-                                                // Formula: (Monthly Salary / Days in Month) / 12 hours
-                                                hourly = (salary / daysInMonth / 12).toFixed(2);
-                                            }
-
-                                            setFormData({
-                                                ...formData,
-                                                monthlySalary: e.target.value,
-                                                hourlyRate: hourly
-                                            });
-                                        }}
-                                        className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
-                                    />
-                                    <p className="text-[10px] text-slate-500">Auto-calculates hourly rate</p>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="emp-rate" className="text-slate-300">
-                                        Hourly Rate (₹)
-                                    </Label>
-                                    <Input
-                                        id="emp-rate"
-                                        type="number"
-                                        placeholder="41.67"
-                                        value={formData.hourlyRate}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, hourlyRate: e.target.value })
-                                        }
-                                        className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
-                                    />
-                                </div>
-                            </div>
-                            <div className="flex gap-3 pt-2">
+                            {loginMsg && (
+                                <p className={`text-sm px-3 py-2 rounded-lg border ${loginMsg.startsWith("✓")
+                                    ? "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                                    : "text-rose-400 bg-rose-500/10 border-rose-500/20"
+                                    }`}>
+                                    {loginMsg}
+                                </p>
+                            )}
+                            <div className="flex gap-3 pt-1">
                                 <Button
                                     variant="outline"
-                                    onClick={() => setDialogOpen(false)}
+                                    onClick={() => setLoginDialogOpen(false)}
                                     className="flex-1 border-white/10 text-slate-300 hover:bg-white/5 hover:text-white"
                                 >
-                                    Cancel
+                                    Close
                                 </Button>
                                 <Button
-                                    onClick={handleSave}
-                                    disabled={
-                                        saving ||
-                                        !formData.id ||
-                                        !formData.name ||
-                                        !formData.hourlyRate
-                                    }
-                                    className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700"
+                                    onClick={handleSaveLogin}
+                                    disabled={loginSaving}
+                                    className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white"
                                 >
-                                    {saving ? "Saving..." : editing ? "Update" : "Add Employee"}
+                                    {loginSaving ? "Saving..." : loginTarget?.user ? "Update" : "Create Login"}
                                 </Button>
                             </div>
                         </div>
                     </DialogContent>
                 </Dialog>
-            </div>
+            )}
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogContent className="border-white/10 bg-slate-900 text-white sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-white">
+                            {editing ? "Edit Employee" : "Add New Employee"}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="emp-id" className="text-slate-300">
+                                Employee ID
+                            </Label>
+                            <Input
+                                id="emp-id"
+                                placeholder="E001"
+                                value={formData.id}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, id: e.target.value })
+                                }
+                                disabled={!!editing}
+                                className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="emp-name" className="text-slate-300">
+                                Full Name
+                            </Label>
+                            <Input
+                                id="emp-name"
+                                placeholder="John Smith"
+                                value={formData.name}
+                                onChange={(e) =>
+                                    setFormData({ ...formData, name: e.target.value })
+                                }
+                                className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="emp-shift" className="text-slate-300">
+                                Shift
+                            </Label>
+                            <Select
+                                value={formData.shift}
+                                onValueChange={(val: string | null) =>
+                                    setFormData({ ...formData, shift: val || "Day" })
+                                }
+                            >
+                                <SelectTrigger className="border-white/10 bg-white/5 text-white">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-white/10 bg-slate-800">
+                                    <SelectItem value="Day">Day</SelectItem>
+                                    <SelectItem value="Night">Night</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="emp-salary" className="text-slate-300">
+                                    Monthly Salary (₹)
+                                </Label>
+                                <Input
+                                    id="emp-salary"
+                                    type="number"
+                                    placeholder="15000"
+                                    value={formData.monthlySalary}
+                                    onChange={(e) => {
+                                        const salary = parseFloat(e.target.value);
+                                        // Calculate days in current month
+                                        const now = new Date();
+                                        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+                                        let hourly = "";
+                                        if (!isNaN(salary) && salary > 0) {
+                                            // Formula: (Monthly Salary / Days in Month) / 12 hours
+                                            hourly = (salary / daysInMonth / 12).toFixed(2);
+                                        }
+
+                                        setFormData({
+                                            ...formData,
+                                            monthlySalary: e.target.value,
+                                            hourlyRate: hourly
+                                        });
+                                    }}
+                                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                                />
+                                <p className="text-[10px] text-slate-500">Auto-calculates hourly rate</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="emp-rate" className="text-slate-300">
+                                    Hourly Rate (₹)
+                                </Label>
+                                <Input
+                                    id="emp-rate"
+                                    type="number"
+                                    placeholder="41.67"
+                                    value={formData.hourlyRate}
+                                    onChange={(e) =>
+                                        setFormData({ ...formData, hourlyRate: e.target.value })
+                                    }
+                                    className="border-white/10 bg-white/5 text-white placeholder:text-slate-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex gap-3 pt-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setDialogOpen(false)}
+                                className="flex-1 border-white/10 text-slate-300 hover:bg-white/5 hover:text-white"
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleSave}
+                                disabled={
+                                    saving ||
+                                    !formData.id ||
+                                    !formData.name ||
+                                    !formData.hourlyRate
+                                }
+                                className="flex-1 bg-gradient-to-r from-violet-600 to-indigo-600 text-white hover:from-violet-700 hover:to-indigo-700"
+                            >
+                                {saving ? "Saving..." : editing ? "Update" : "Add Employee"}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Employees Table */}
             <Card className="border-white/5 bg-white/5 backdrop-blur-sm">
@@ -371,6 +517,18 @@ export default function EmployeesPage() {
                                             </TableCell>
                                             <TableCell className="text-right">
                                                 <div className="flex justify-end gap-2">
+                                                    {session?.role === "SUPER_ADMIN" && (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleOpenLogin(emp)}
+                                                            className={`h-8 w-8 p-0 hover:bg-white/10 ${emp.user ? "text-emerald-400 hover:text-emerald-300" : "text-slate-400 hover:text-violet-400"
+                                                                }`}
+                                                            title={emp.user ? `Login: ${emp.user.username}` : "Create login"}
+                                                        >
+                                                            <KeyRound className="h-4 w-4" />
+                                                        </Button>
+                                                    )}
                                                     <Button
                                                         variant="ghost"
                                                         size="sm"
@@ -399,70 +557,71 @@ export default function EmployeesPage() {
             </Card>
 
             {/* Inactive Employees */}
-            {inactiveEmployees.length > 0 && (
-                <Card className="border-white/5 bg-white/5 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="text-slate-400">
-                            Inactive Employees
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="overflow-auto rounded-lg border border-white/5">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-white/5 hover:bg-transparent">
-                                        <TableHead className="text-slate-400">ID</TableHead>
-                                        <TableHead className="text-slate-400">Name</TableHead>
-                                        <TableHead className="text-slate-400">Shift</TableHead>
-                                        <TableHead className="text-right text-slate-400">
-                                            Actions
-                                        </TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {inactiveEmployees.map((emp) => (
-                                        <TableRow
-                                            key={emp.id}
-                                            className="border-white/5 opacity-60 hover:bg-white/5"
-                                        >
-                                            <TableCell className="font-mono text-sm text-slate-400">
-                                                {emp.id}
-                                            </TableCell>
-                                            <TableCell className="text-slate-400">
-                                                {emp.name}
-                                            </TableCell>
-                                            <TableCell className="text-slate-500">
-                                                {emp.shift}
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <div className="flex justify-end items-center gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handleReactivate(emp.id)}
-                                                        className="text-sm text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
-                                                    >
-                                                        Reactivate
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => handlePermanentDelete(emp.id, emp.name)}
-                                                        className="h-8 w-8 p-0 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
-                                                        title="Delete permanently"
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
+            {
+                inactiveEmployees.length > 0 && (
+                    <Card className="border-white/5 bg-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-slate-400">
+                                Inactive Employees
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="overflow-auto rounded-lg border border-white/5">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow className="border-white/5 hover:bg-transparent">
+                                            <TableHead className="text-slate-400">ID</TableHead>
+                                            <TableHead className="text-slate-400">Name</TableHead>
+                                            <TableHead className="text-slate-400">Shift</TableHead>
+                                            <TableHead className="text-right text-slate-400">
+                                                Actions
+                                            </TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+                                    </TableHeader>
+                                    <TableBody>
+                                        {inactiveEmployees.map((emp) => (
+                                            <TableRow
+                                                key={emp.id}
+                                                className="border-white/5 opacity-60 hover:bg-white/5"
+                                            >
+                                                <TableCell className="font-mono text-sm text-slate-400">
+                                                    {emp.id}
+                                                </TableCell>
+                                                <TableCell className="text-slate-400">
+                                                    {emp.name}
+                                                </TableCell>
+                                                <TableCell className="text-slate-500">
+                                                    {emp.shift}
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end items-center gap-2">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handleReactivate(emp.id)}
+                                                            className="text-sm text-violet-400 hover:bg-violet-500/10 hover:text-violet-300"
+                                                        >
+                                                            Reactivate
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => handlePermanentDelete(emp.id, emp.name)}
+                                                            className="h-8 w-8 p-0 text-slate-500 hover:bg-rose-500/10 hover:text-rose-400"
+                                                            title="Delete permanently"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
         </div>
     );
 }
