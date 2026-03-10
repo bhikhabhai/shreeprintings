@@ -66,10 +66,31 @@ export async function POST(request: NextRequest) {
             const dateColumns: { col: number; day: number }[] = [];
             for (let c = 5; c <= range.e.c; c++) {
                 const cell = ws[XLSX.utils.encode_cell({ r: 0, c })];
-                if (cell && typeof cell.v === "string") {
-                    const dateMatch = cell.v.match(/^(\d{2})-/);
-                    if (dateMatch) {
-                        dateColumns.push({ col: c, day: parseInt(dateMatch[1]) });
+                if (cell) {
+                    // Try to get string value like "01-Jan" or "1-Feb"
+                    // If cell is a parsed date object or number, cell.w contains the formatted string.
+                    let dateStr = "";
+                    if (typeof cell.v === "string") {
+                        dateStr = cell.v;
+                    } else if (cell.w) {
+                        dateStr = String(cell.w);
+                    } else if (typeof cell.v === "number") {
+                        // Very rare fallback if cell.w is missing for some reason
+                        dateStr = String(cell.v);
+                    }
+
+                    // We expect "DD-MMM" (like "01-Jan" or "1-Feb") or "M/D/YY" (like "2/16/26")
+                    // Note: Excel often formats dates based on the system locale, so it could be DD/MM/YY as well.
+                    // Given previous headers were DD-MMM, let's look for `-` or `/` separators.
+                    const dashMatch = dateStr.match(/^(\d{1,2})-/);
+                    if (dashMatch) {
+                        dateColumns.push({ col: c, day: parseInt(dashMatch[1]) });
+                    } else {
+                        const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\//);
+                        if (slashMatch) {
+                            // Assuming MM/DD/YY based on "2/16/26" format (16 is day)
+                            dateColumns.push({ col: c, day: parseInt(slashMatch[2]) });
+                        }
                     }
                 }
             }
